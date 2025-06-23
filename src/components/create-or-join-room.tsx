@@ -34,62 +34,78 @@ export function CreateOrJoinRoom() {
 
   const handleCreateRoom = async () => {
     setIsCreating(true);
-    const generateRoomId = () => Math.floor(1000 + Math.random() * 9000).toString();
-    
-    let newRoomId;
-    let roomExists = true;
-    while (roomExists) {
+    try {
+      const generateRoomId = () => Math.floor(1000 + Math.random() * 9000).toString();
+      
+      let newRoomId;
+      let roomExists = true;
+      let attempt = 0;
+      while (roomExists) {
+        if (attempt > 20) { // Safety break
+            throw new Error("Could not find an available room ID.");
+        }
         newRoomId = generateRoomId();
         const roomDoc = await getDoc(doc(db, 'games', newRoomId));
         roomExists = roomDoc.exists();
+        attempt++;
+      }
+      
+      const playerId = Math.random().toString(36).substring(2, 9);
+      localStorage.setItem('tictactoe-player-id', playerId);
+
+      await setDoc(doc(db, 'games', newRoomId), {
+        roomId: newRoomId,
+        board: Array(9).fill(null),
+        players: { X: playerId, O: null },
+        playerCount: 1,
+        nextPlayer: 'X',
+        winner: null,
+        createdAt: serverTimestamp(),
+      });
+
+      toast({ title: "Room Created!", description: `Your room code is ${newRoomId}.` });
+      router.push(`/${newRoomId}`);
+    } catch (error) {
+        console.error("Error creating room:", error);
+        toast({ title: "Error Creating Room", description: "Please check your Firestore security rules and internet connection.", variant: "destructive" });
+        setIsCreating(false);
     }
-    
-    const playerId = Math.random().toString(36).substring(2, 9);
-    localStorage.setItem('tictactoe-player-id', playerId);
-
-    await setDoc(doc(db, 'games', newRoomId), {
-      roomId: newRoomId,
-      board: Array(9).fill(null),
-      players: { X: playerId, O: null },
-      playerCount: 1,
-      nextPlayer: 'X',
-      winner: null,
-      createdAt: serverTimestamp(),
-    });
-
-    toast({ title: "Room Created!", description: `Your room code is ${newRoomId}.` });
-    router.push(`/${newRoomId}`);
   };
 
   const onJoinSubmit = async (data: z.infer<typeof FormSchema>) => {
     setIsJoining(true);
     const { roomId } = data;
-    const roomRef = doc(db, 'games', roomId);
-    const roomDoc = await getDoc(roomRef);
+    try {
+      const roomRef = doc(db, 'games', roomId);
+      const roomDoc = await getDoc(roomRef);
 
-    if (roomDoc.exists()) {
-      const gameData = roomDoc.data();
-      if (gameData.playerCount < 2) {
-        const playerId = localStorage.getItem('tictactoe-player-id') || Math.random().toString(36).substring(2, 9);
-        if (!localStorage.getItem('tictactoe-player-id')) {
-            localStorage.setItem('tictactoe-player-id', playerId);
+      if (roomDoc.exists()) {
+        const gameData = roomDoc.data();
+        if (gameData.players.X !== playerId && gameData.playerCount < 2) {
+          const playerId = localStorage.getItem('tictactoe-player-id') || Math.random().toString(36).substring(2, 9);
+          if (!localStorage.getItem('tictactoe-player-id')) {
+              localStorage.setItem('tictactoe-player-id', playerId);
+          }
+          
+          await setDoc(roomRef, { 
+              players: { ...gameData.players, O: playerId },
+              playerCount: 2,
+           }, { merge: true });
+          
+          router.push(`/${roomId}`);
+        } else if (gameData.players.X === playerId || gameData.players.O === playerId) {
+            router.push(`/${roomId}`);
+        } else {
+          toast({ title: "Room Full", description: "This room is already full.", variant: "destructive" });
+          setIsJoining(false);
         }
-        
-        // Check if player is already in the game
-        if (gameData.players.X !== playerId) {
-            await setDoc(roomRef, { 
-                players: { ...gameData.players, O: playerId },
-                playerCount: 2,
-             }, { merge: true });
-        }
-        
-        router.push(`/${roomId}`);
       } else {
-        toast({ title: "Room Full", description: "This room is already full.", variant: "destructive" });
+        toast({ title: "Room Not Found", description: "No room found with this code.", variant: "destructive" });
         setIsJoining(false);
       }
-    } else {
-      toast({ title: "Room Not Found", description: "No room found with this code.", variant: "destructive" });
+    } catch (error) {
+      console.error("Error joining room:", error);
+      toast({ title: "Error Joining Room", description: "Please check the room code, Firestore security rules, and your internet connection.", variant: "destructive" });
       setIsJoining(false);
     }
   };
