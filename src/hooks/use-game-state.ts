@@ -1,29 +1,21 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { doc, onSnapshot, updateDoc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { checkWinner } from '@/lib/game-logic';
 import type { Game, PlayerSymbol } from '@/types';
 import { useToast } from './use-toast';
 import { useRouter } from 'next/navigation';
+import { usePlayerId } from './use-player-id';
 
 export function useGameState(roomId: string) {
   const [game, setGame] = useState<Game | null>(null);
-  const [playerId, setPlayerId] = useState<string | null>(null);
+  const playerId = usePlayerId();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const router = useRouter();
-
-  useEffect(() => {
-    let storedPlayerId = localStorage.getItem('tictactoe-player-id');
-    if (!storedPlayerId) {
-      storedPlayerId = Math.random().toString(36).substring(2, 9);
-      localStorage.setItem('tictactoe-player-id', storedPlayerId);
-    }
-    setPlayerId(storedPlayerId);
-  }, []);
 
   useEffect(() => {
     if (!roomId || !playerId) return;

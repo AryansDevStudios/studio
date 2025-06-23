@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+import { usePlayerId } from '@/hooks/use-player-id';
 
 const FormSchema = z.object({
   roomId: z.string().length(4, "Room code must be 4 digits.").regex(/^\d{4}$/, "Room code must be 4 digits."),
@@ -24,6 +25,7 @@ export function CreateOrJoinRoom() {
   const { toast } = useToast();
   const [isCreating, setIsCreating] = React.useState(false);
   const [isJoining, setIsJoining] = React.useState(false);
+  const playerId = usePlayerId();
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -33,6 +35,10 @@ export function CreateOrJoinRoom() {
   });
 
   const handleCreateRoom = async () => {
+    if (!playerId) {
+      toast({ title: "Player ID not ready", description: "Please wait a moment and try again.", variant: "destructive" });
+      return;
+    }
     setIsCreating(true);
     try {
       const generateRoomId = () => Math.floor(1000 + Math.random() * 9000).toString();
@@ -49,9 +55,6 @@ export function CreateOrJoinRoom() {
         roomExists = roomDoc.exists();
         attempt++;
       }
-      
-      const playerId = Math.random().toString(36).substring(2, 9);
-      localStorage.setItem('tictactoe-player-id', playerId);
 
       await setDoc(doc(db, 'games', newRoomId), {
         roomId: newRoomId,
@@ -73,15 +76,13 @@ export function CreateOrJoinRoom() {
   };
 
   const onJoinSubmit = async (data: z.infer<typeof FormSchema>) => {
+    if (!playerId) {
+      toast({ title: "Player ID not ready", description: "Please wait a moment and try again.", variant: "destructive" });
+      return;
+    }
     setIsJoining(true);
     const { roomId } = data;
     try {
-      let playerId = localStorage.getItem('tictactoe-player-id');
-      if (!playerId) {
-        playerId = Math.random().toString(36).substring(2, 9);
-        localStorage.setItem('tictactoe-player-id', playerId);
-      }
-      
       const roomRef = doc(db, 'games', roomId);
       const roomDoc = await getDoc(roomRef);
 
@@ -139,7 +140,7 @@ export function CreateOrJoinRoom() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isJoining || isCreating}>
+            <Button type="submit" className="w-full" disabled={isJoining || isCreating || !playerId}>
               {isJoining ? <Loader2 className="animate-spin" /> : <DoorOpen />}
               Join Room
             </Button>
@@ -155,7 +156,7 @@ export function CreateOrJoinRoom() {
             </span>
           </div>
         </div>
-        <Button onClick={handleCreateRoom} variant="secondary" className="w-full" disabled={isCreating || isJoining}>
+        <Button onClick={handleCreateRoom} variant="secondary" className="w-full" disabled={isCreating || isJoining || !playerId}>
             {isCreating ? <Loader2 className="animate-spin" /> : <Swords />}
             Create a New Room
         </Button>
