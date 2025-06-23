@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { doc, onSnapshot, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { useState, useEffect, useCallback } from 'react';
+import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { checkWinner } from '@/lib/game-logic';
 import type { Game, PlayerSymbol } from '@/types';
@@ -16,7 +16,6 @@ export function useGameState(roomId: string) {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const router = useRouter();
-  const opponentTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (!roomId || !playerId) return;
@@ -24,7 +23,7 @@ export function useGameState(roomId: string) {
     setLoading(true);
     const gameRef = doc(db, 'games', roomId);
 
-    const unsubscribe = onSnapshot(gameRef, async (docSnap) => {
+    const unsubscribe = onSnapshot(gameRef, (docSnap) => {
       if (docSnap.exists()) {
         const gameData = docSnap.data() as Game;
         
@@ -53,79 +52,6 @@ export function useGameState(roomId: string) {
 
   const playerSymbol: PlayerSymbol | null = game && playerId === game.players.X?.id ? 'X' : (game && playerId === game.players.O?.id ? 'O' : null);
 
-  // Player heartbeat to indicate they are online
-  useEffect(() => {
-    if (!playerSymbol || !game || game.winner) return;
-
-    const gameRef = doc(db, 'games', roomId);
-    const interval = setInterval(() => {
-        if (document.visibilityState === 'visible') {
-            updateDoc(gameRef, {
-                [`players.${playerSymbol}.lastSeen`]: serverTimestamp()
-            }).catch(err => console.error("Heartbeat failed", err));
-        }
-    }, 10000); // every 10 seconds
-
-    return () => clearInterval(interval);
-  }, [game, playerSymbol, roomId]);
-
-  // Check for opponent timeout
-  useEffect(() => {
-    // Always clear any existing timeout when the effect re-runs or unmounts.
-    const clearTimer = () => {
-      if (opponentTimeoutRef.current) {
-        clearTimeout(opponentTimeoutRef.current);
-      }
-    };
-
-    if (!game || game.playerCount < 2 || game.winner || !playerSymbol) {
-      clearTimer();
-      return;
-    }
-
-    const TIMEOUT_MS = 20000;
-    const gameRef = doc(db, 'games', roomId);
-    const opponentSymbol = playerSymbol === 'X' ? 'O' : 'X';
-    const opponent = game.players[opponentSymbol];
-
-    if (!opponent.id || !opponent.lastSeen) {
-      clearTimer();
-      return;
-    }
-
-    const timeSinceLastSeen = new Date().getTime() - opponent.lastSeen.toDate().getTime();
-    const timeUntilTimeout = TIMEOUT_MS - timeSinceLastSeen;
-
-    clearTimer(); // Clear previous timer before setting a new one.
-
-    if (timeUntilTimeout > 0) {
-      // Opponent is still active, set a timeout to check again after the remaining time.
-      opponentTimeoutRef.current = setTimeout(() => {
-        getDoc(gameRef).then(docSnap => {
-            if (docSnap.exists()) {
-                const currentData = docSnap.data() as Game;
-                if(currentData.winner) return;
-
-                const opponentData = currentData.players[opponentSymbol];
-                if (opponentData.lastSeen && (new Date().getTime() - opponentData.lastSeen.toDate().getTime() > TIMEOUT_MS)) {
-                    updateDoc(gameRef, {
-                        winner: playerSymbol,
-                        winReason: 'timeout'
-                    });
-                }
-            }
-        });
-      }, timeUntilTimeout + 1000); // Check 1s after timeout is expected
-    } else {
-      // Opponent has already timed out. Make sure we don't overwrite an existing win.
-      if (!game.winner) {
-        updateDoc(gameRef, { winner: playerSymbol, winReason: 'timeout' });
-      }
-    }
-
-    return clearTimer;
-  }, [game, playerSymbol, roomId]);
-
   const handleCellClick = useCallback(async (index: number) => {
     if (!game || !playerSymbol) return;
 
@@ -141,7 +67,6 @@ export function useGameState(roomId: string) {
       board: newBoard,
       nextPlayer: game.nextPlayer === 'X' ? 'O' : 'X',
       winner: winner,
-      [`players.${playerSymbol}.lastSeen`]: serverTimestamp(),
     };
 
     if (winner && winner !== 'draw') {
@@ -171,8 +96,6 @@ export function useGameState(roomId: string) {
             nextPlayer: 'X',
             winner: null,
             winReason: null,
-            'players.X.lastSeen': serverTimestamp(),
-            'players.O.lastSeen': serverTimestamp(),
         });
     } catch(e) {
         console.error("Error resetting game:", e);

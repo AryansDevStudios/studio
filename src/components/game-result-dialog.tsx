@@ -40,7 +40,7 @@ export function GameResultDialog({ game, onPlayAgain, playerSymbol }: GameResult
 
   const isWinner = game.winner === playerSymbol;
   const isDraw = game.winner === 'draw';
-  const isTimeoutOrAbandon = game.winReason === 'timeout' || game.winReason === 'abandonment';
+  const isAbandonment = game.winReason === 'abandonment';
 
   const handlePlayAgainClick = () => {
     onPlayAgain();
@@ -52,24 +52,22 @@ export function GameResultDialog({ game, onPlayAgain, playerSymbol }: GameResult
 
   const getResultIcon = () => {
     if (isDraw) return <Handshake className="h-16 w-16 text-muted-foreground" />;
-    if (isWinner && isTimeoutOrAbandon) return <LogOut className="h-16 w-16 text-yellow-400" />;
+    if (isWinner && isAbandonment) return <LogOut className="h-16 w-16 text-yellow-400" />;
     if (isWinner) return <Trophy className="h-16 w-16 text-yellow-400" />;
     return <Frown className="h-16 w-16 text-destructive" />;
   };
 
   const getResultTitle = () => {
     if (isDraw) return "A Stalemate!";
-    if (isWinner && isTimeoutOrAbandon) return "Victory by Forfeit";
+    if (isWinner && isAbandonment) return "Victory by Forfeit";
     if (isWinner) return "Victory!";
     return "Defeat";
   };
   
   const getResultDescription = () => {
     if (isDraw) return "A hard-fought battle with no winner. Well played by both sides!";
-    if (isWinner && game.winReason === 'timeout') return "Your opponent disconnected for too long. A win is a win!";
     if (isWinner && game.winReason === 'abandonment') return "Your opponent left the match. A win is a win!";
     if (isWinner) return "Congratulations! Your strategic genius has paid off. Care for a rematch?";
-    if (game.winReason === 'timeout') return "You disconnected for too long, resulting in a loss. Ready for a comeback?";
     if (game.winReason === 'abandonment') return "You left the match, resulting in a loss. Ready for a comeback?";
     return "A valiant effort, but your opponent was victorious this time. Ready for a comeback?";
   }

@@ -67,8 +67,8 @@ export function CreateOrJoinRoom() {
         roomId: newRoomId,
         board: Array(9).fill(null),
         players: { 
-          X: { id: playerId, name: name, lastSeen: serverTimestamp() }, 
-          O: { id: null, name: null, lastSeen: null } 
+          X: { id: playerId, name: name }, 
+          O: { id: null, name: null } 
         },
         playerCount: 1,
         nextPlayer: 'X',
@@ -106,18 +106,14 @@ export function CreateOrJoinRoom() {
         const gameData = roomDoc.data();
         
         if (gameData.players.X?.id === playerId || gameData.players.O?.id === playerId) {
-            // Player is rejoining, update their lastSeen
-            const playerSymbol = gameData.players.X?.id === playerId ? 'X' : 'O';
-            await updateDoc(roomRef, {
-                [`players.${playerSymbol}.lastSeen`]: serverTimestamp()
-            });
+            // Player is rejoining, just send them to the room.
             router.push(`/${roomId}`);
             return;
         }
 
         if (gameData.playerCount < 2) {
           await updateDoc(roomRef, { 
-              'players.O': { id: playerId, name: name, lastSeen: serverTimestamp() },
+              'players.O': { id: playerId, name: name },
               playerCount: 2,
            });
           
