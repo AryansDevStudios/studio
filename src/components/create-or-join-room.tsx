@@ -6,18 +6,19 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
-import { Loader2, Swords, DoorOpen } from 'lucide-react';
+import { Loader2, Swords, DoorOpen, PartyPopper } from 'lucide-react';
 
 import { db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { usePlayerId } from '@/hooks/use-player-id';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 const FormSchema = z.object({
-  roomId: z.string().length(4, "Room code must be 4 digits.").regex(/^\d{4}$/, "Room code must be 4 digits."),
+  roomId: z.string().length(4, "Room code must be 4 digits.").regex(/^\d{4}$/, "Room code must be 4 digits.").optional(),
 });
 
 export function CreateOrJoinRoom() {
@@ -66,7 +67,7 @@ export function CreateOrJoinRoom() {
         createdAt: serverTimestamp(),
       });
 
-      toast({ title: "Room Created!", description: `Your room code is ${newRoomId}.` });
+      toast({ title: "Room Created!", description: `Your room code is ${newRoomId}. Redirecting...` });
       router.push(`/${newRoomId}`);
     } catch (error) {
         console.error("Error creating room:", error);
@@ -80,8 +81,14 @@ export function CreateOrJoinRoom() {
       toast({ title: "Player ID not ready", description: "Please wait a moment and try again.", variant: "destructive" });
       return;
     }
-    setIsJoining(true);
     const { roomId } = data;
+    if (!roomId) {
+        form.setError("roomId", { type: "manual", message: "Please enter a room code." });
+        return;
+    }
+
+    setIsJoining(true);
+    
     try {
       const roomRef = doc(db, 'games', roomId);
       const roomDoc = await getDoc(roomRef);
@@ -89,13 +96,11 @@ export function CreateOrJoinRoom() {
       if (roomDoc.exists()) {
         const gameData = roomDoc.data();
         
-        // If player is already in the game, just go to the room
         if (gameData.players.X === playerId || gameData.players.O === playerId) {
             router.push(`/${roomId}`);
             return;
         }
 
-        // If room is not full, join as player 'O'
         if (gameData.playerCount < 2) {
           await setDoc(roomRef, { 
               players: { ...gameData.players, O: playerId },
@@ -104,7 +109,6 @@ export function CreateOrJoinRoom() {
           
           router.push(`/${roomId}`);
         } else {
-          // Room is full
           toast({ title: "Room Full", description: "This room is already full.", variant: "destructive" });
           setIsJoining(false);
         }
@@ -114,52 +118,54 @@ export function CreateOrJoinRoom() {
       }
     } catch (error) {
       console.error("Error joining room:", error);
-      toast({ title: "Error Joining Room", description: "Please check the room code, Firestore security rules, and your internet connection.", variant: "destructive" });
+      toast({ title: "Error Joining Room", description: "An unexpected error occurred.", variant: "destructive" });
       setIsJoining(false);
     }
   };
 
   return (
-    <Card className="w-full max-w-sm shadow-2xl bg-card/80 backdrop-blur-sm animate-fade-in-up">
-      <CardHeader>
-        <CardTitle>Join a Game</CardTitle>
-        <CardDescription>Enter a 4-digit room code to join.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onJoinSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="roomId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <Input placeholder="1234" {...field} className="text-center text-lg h-12" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit" className="w-full" disabled={isJoining || isCreating || !playerId}>
-              {isJoining ? <Loader2 className="animate-spin" /> : <DoorOpen />}
-              Join Room
+    <Card className="w-full max-w-md shadow-2xl bg-card/80 backdrop-blur-sm border-2">
+      <CardContent className="p-0">
+        <Tabs defaultValue="join" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 h-14 rounded-b-none">
+            <TabsTrigger value="join" className="text-base h-full"><DoorOpen className="mr-2"/>Join Room</TabsTrigger>
+            <TabsTrigger value="create" className="text-base h-full"><Swords className="mr-2"/>Create Room</TabsTrigger>
+          </TabsList>
+          <TabsContent value="join" className="p-6">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onJoinSubmit)} className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="roomId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-lg">Room Code</FormLabel>
+                      <FormControl>
+                        <Input 
+                            placeholder="1234" {...field} 
+                            className="text-center text-2xl h-14 tracking-[1em]"
+                            maxLength={4}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" className="w-full h-12 text-lg" disabled={isJoining || isCreating || !playerId}>
+                  {isJoining ? <Loader2 className="animate-spin" /> : <PartyPopper />}
+                  Let's Go!
+                </Button>
+              </form>
+            </Form>
+          </TabsContent>
+          <TabsContent value="create" className="p-6 text-center space-y-6">
+            <p className="text-muted-foreground text-lg">Ready to start a new battle? Click below to generate a fresh game room.</p>
+            <Button onClick={handleCreateRoom} variant="default" className="w-full h-12 text-lg" disabled={isCreating || isJoining || !playerId}>
+                {isCreating ? <Loader2 className="animate-spin" /> : <Swords />}
+                Create a New Room
             </Button>
-          </form>
-        </Form>
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">
-              Or
-            </span>
-          </div>
-        </div>
-        <Button onClick={handleCreateRoom} variant="secondary" className="w-full" disabled={isCreating || isJoining || !playerId}>
-            {isCreating ? <Loader2 className="animate-spin" /> : <Swords />}
-            Create a New Room
-        </Button>
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );

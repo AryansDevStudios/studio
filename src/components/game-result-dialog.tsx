@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import { Trophy, Frown, Handshake } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,7 +26,6 @@ export function GameResultDialog({ game, onPlayAgain, playerSymbol }: GameResult
 
   React.useEffect(() => {
     if (game?.winner) {
-      // Delay opening the dialog slightly to allow the final move to render
       const timer = setTimeout(() => setIsOpen(true), 500);
       return () => clearTimeout(timer);
     } else {
@@ -35,32 +35,44 @@ export function GameResultDialog({ game, onPlayAgain, playerSymbol }: GameResult
 
   if (!game) return null;
 
+  const isWinner = game.winner === playerSymbol;
+  const isDraw = game.winner === 'draw';
+
+  const getResultIcon = () => {
+    if (isDraw) return <Handshake className="h-16 w-16 text-muted-foreground" />;
+    if (isWinner) return <Trophy className="h-16 w-16 text-yellow-400" />;
+    return <Frown className="h-16 w-16 text-destructive" />;
+  };
+
   const getResultTitle = () => {
-    if (game.winner === 'draw') return "It's a Draw!";
-    if (game.winner === playerSymbol) return "🎉 You Won! 🎉";
-    return "😢 You Lost 😢";
+    if (isDraw) return "A Stalemate!";
+    if (isWinner) return "Victory!";
+    return "Defeat";
   };
   
   const getResultDescription = () => {
-    if (game.winner === 'draw') return "A hard-fought battle with no winner. Well played by both sides!";
-    if (game.winner === playerSymbol) return "Congratulations! Your strategic genius has paid off. Care for another round?";
+    if (isDraw) return "A hard-fought battle with no winner. Well played by both sides!";
+    if (isWinner) return "Congratulations! Your strategic genius has paid off. Care for a rematch?";
     return "A valiant effort, but your opponent was victorious this time. Ready for a comeback?";
   }
 
   return (
     <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
       <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle className="text-2xl text-center">{getResultTitle()}</AlertDialogTitle>
-          <AlertDialogDescription className="text-center">
+        <AlertDialogHeader className="items-center">
+            <div className="mb-4">
+                {getResultIcon()}
+            </div>
+          <AlertDialogTitle className="text-3xl font-bold text-center">{getResultTitle()}</AlertDialogTitle>
+          <AlertDialogDescription className="text-center text-lg mt-2">
             {getResultDescription()}
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter className="sm:justify-center">
+        <AlertDialogFooter className="sm:justify-center pt-4 gap-3">
           <AlertDialogCancel asChild>
-            <Link href="/">Exit to Home</Link>
+            <Link href="/" className="w-full">Exit to Home</Link>
           </AlertDialogCancel>
-          <AlertDialogAction onClick={onPlayAgain}>
+          <AlertDialogAction onClick={onPlayAgain} className="w-full">
             Play Again
           </AlertDialogAction>
         </AlertDialogFooter>

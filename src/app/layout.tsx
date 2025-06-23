@@ -1,10 +1,12 @@
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
+import { GeistSans } from 'geist/font/sans';
+import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
-  title: 'TicTacToe Meet',
-  description: 'Play Tic-Tac-Toe with your friends online.',
+  title: 'Tic-Tac-Toe Arena',
+  description: 'The ultimate online Tic-Tac-Toe showdown.',
 };
 
 export default function RootLayout({
@@ -13,13 +15,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet" />
-      </head>
-      <body className="font-body antialiased">
+    <html lang="en" className={cn("dark", GeistSans.className)}>
+      <body className="antialiased">
         {children}
         <Toaster />
       </body>
