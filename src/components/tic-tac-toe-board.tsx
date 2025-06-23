@@ -12,8 +12,8 @@ interface TicTacToeBoardProps {
 }
 
 const PlayerIcon = ({ symbol }: { symbol: PlayerSymbol | null }) => {
-    if (symbol === 'X') return <X className="h-12 w-12 sm:h-16 sm:w-16 text-destructive" />;
-    if (symbol === 'O') return <Circle className="h-12 w-12 sm:h-16 sm:w-16 text-primary" />;
+    if (symbol === 'X') return <X className="h-16 w-16 sm:h-20 sm:w-20 text-destructive" />;
+    if (symbol === 'O') return <Circle className="h-16 w-16 sm:h-20 sm:w-20 text-primary" />;
     return null;
 };
 

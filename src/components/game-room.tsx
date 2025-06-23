@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from 'react';
 import Link from 'next/link';
 import { Home, Loader2, AlertTriangle, Copy } from 'lucide-react';
 
@@ -11,8 +12,15 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { useToast } from '@/hooks/use-toast';
 
 export function GameRoom({ roomId }: { roomId: string }) {
-  const { game, playerSymbol, loading, error, handleCellClick, handlePlayAgain } = useGameState(roomId);
+  const { game, playerSymbol, loading, error, handleCellClick, handlePlayAgain, handleLeaveRoom } = useGameState(roomId);
   const { toast } = useToast();
+  const [hasBeenFull, setHasBeenFull] = React.useState(false);
+
+  React.useEffect(() => {
+    if (game?.playerCount === 2) {
+      setHasBeenFull(true);
+    }
+  }, [game?.playerCount]);
   
   const copyRoomId = () => {
     navigator.clipboard.writeText(roomId);
@@ -53,6 +61,9 @@ export function GameRoom({ roomId }: { roomId: string }) {
         if (game.winner === 'draw') return "It's a draw!";
         return `Player ${game.winner} wins!`;
     }
+    if (hasBeenFull && game.playerCount < 2) {
+        return "Opponent has left the game.";
+    }
     if (game.playerCount < 2) return "Waiting for opponent to join...";
     if (game.nextPlayer === playerSymbol) return "Your turn!";
     return `Waiting for Player ${game.nextPlayer}'s turn...`;
@@ -79,8 +90,8 @@ export function GameRoom({ roomId }: { roomId: string }) {
                 onCellClick={handleCellClick}
                 disabled={!playerSymbol || game.nextPlayer !== playerSymbol || !!game.winner}
             />
-            <Button asChild variant="outline">
-                <Link href="/"><Home className="mr-2 h-4 w-4" />Leave Room</Link>
+            <Button variant="outline" onClick={handleLeaveRoom}>
+                <Home className="mr-2 h-4 w-4" />Leave Room
             </Button>
         </CardContent>
     </Card>

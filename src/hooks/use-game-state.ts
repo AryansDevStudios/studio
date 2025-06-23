@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { doc, onSnapshot, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { checkWinner } from '@/lib/game-logic';
 import type { Game, PlayerSymbol } from '@/types';
@@ -106,6 +106,34 @@ export function useGameState(roomId: string) {
     }
   }, [game, roomId, toast]);
 
+  const handleLeaveRoom = useCallback(async () => {
+    if (playerId) {
+        const gameRef = doc(db, 'games', roomId);
+        try {
+            const docSnap = await getDoc(gameRef);
+            if (docSnap.exists()) {
+                const gameData = docSnap.data() as Game;
+                if (!gameData.winner) {
+                    const updates: any = {};
+                    if (gameData.players.X === playerId) {
+                        updates['players.X'] = null;
+                        updates.playerCount = gameData.playerCount - 1;
+                    } else if (gameData.players.O === playerId) {
+                        updates['players.O'] = null;
+                        updates.playerCount = gameData.playerCount - 1;
+                    }
+                    if (Object.keys(updates).length > 0) {
+                        await updateDoc(gameRef, updates);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("Error updating state on leave:", error);
+        }
+    }
+    router.push('/');
+  }, [playerId, roomId, router]);
 
-  return { game, playerSymbol, loading, error, handleCellClick, handlePlayAgain };
+
+  return { game, playerSymbol, loading, error, handleCellClick, handlePlayAgain, handleLeaveRoom };
 }
