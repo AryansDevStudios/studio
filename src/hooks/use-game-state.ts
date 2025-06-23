@@ -117,8 +117,10 @@ export function useGameState(roomId: string) {
         });
       }, timeUntilTimeout + 1000); // Check 1s after timeout is expected
     } else {
-      // Opponent has already timed out.
-      updateDoc(gameRef, { winner: playerSymbol, winReason: 'timeout' });
+      // Opponent has already timed out. Make sure we don't overwrite an existing win.
+      if (!game.winner) {
+        updateDoc(gameRef, { winner: playerSymbol, winReason: 'timeout' });
+      }
     }
 
     return clearTimer;
@@ -139,6 +141,7 @@ export function useGameState(roomId: string) {
       board: newBoard,
       nextPlayer: game.nextPlayer === 'X' ? 'O' : 'X',
       winner: winner,
+      [`players.${playerSymbol}.lastSeen`]: serverTimestamp(),
     };
 
     if (winner && winner !== 'draw') {
@@ -156,18 +159,26 @@ export function useGameState(roomId: string) {
   const handlePlayAgain = useCallback(async () => {
     if (!game) return;
 
+    // To prevent a race condition on Play Again, only Player X can trigger a reset.
+    if (playerSymbol !== 'X') {
+        toast({ title: "Please Wait", description: "Waiting for Player X to start the next game."});
+        return;
+    }
+
     try {
         await updateDoc(doc(db, 'games',roomId), {
             board: Array(9).fill(null),
             nextPlayer: 'X',
             winner: null,
             winReason: null,
+            'players.X.lastSeen': serverTimestamp(),
+            'players.O.lastSeen': serverTimestamp(),
         });
     } catch(e) {
         console.error("Error resetting game:", e);
         toast({ title: "Error", description: "Could not restart game. Check Firestore rules.", variant: "destructive"});
     }
-  }, [game, roomId, toast]);
+  }, [game, roomId, toast, playerSymbol]);
 
   const handleLeaveRoom = useCallback(async () => {
     if (!game || !playerSymbol) {
