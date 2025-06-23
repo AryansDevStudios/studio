@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { doc, onSnapshot, updateDoc, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { checkWinner } from '@/lib/game-logic';
 import type { Game, PlayerSymbol } from '@/types';
@@ -52,6 +52,60 @@ export function useGameState(roomId: string) {
 
   const playerSymbol: PlayerSymbol | null = game && playerId === game.players.X?.id ? 'X' : (game && playerId === game.players.O?.id ? 'O' : null);
 
+  // Player heartbeat to indicate they are online
+  useEffect(() => {
+    if (!playerSymbol || !game || game.winner) return;
+
+    const gameRef = doc(db, 'games', roomId);
+    const interval = setInterval(() => {
+        if (document.visibilityState === 'visible') {
+            updateDoc(gameRef, {
+                [`players.${playerSymbol}.lastSeen`]: serverTimestamp()
+            }).catch(err => console.error("Heartbeat failed", err));
+        }
+    }, 10000); // every 10 seconds
+
+    return () => clearInterval(interval);
+  }, [game, playerSymbol, roomId]);
+
+  // Check for opponent timeout
+  useEffect(() => {
+    if (!game || game.playerCount < 2 || game.winner || !playerSymbol) {
+      return;
+    }
+
+    const TIMEOUT_MS = 20000;
+    const gameRef = doc(db, 'games', roomId);
+    const opponentSymbol = playerSymbol === 'X' ? 'O' : 'X';
+    const opponent = game.players[opponentSymbol];
+
+    if (!opponent.id || !opponent.lastSeen) return;
+
+    const checkTimeout = () => {
+        getDoc(gameRef).then(docSnap => {
+            if (docSnap.exists()) {
+                const currentData = docSnap.data() as Game;
+                if(currentData.winner) return;
+
+                const opponentData = currentData.players[opponentSymbol];
+                if (opponentData.lastSeen && (new Date().getTime() - opponentData.lastSeen.toDate().getTime() > TIMEOUT_MS)) {
+                    updateDoc(gameRef, {
+                        winner: playerSymbol,
+                        winReason: 'timeout'
+                    });
+                }
+            }
+        });
+    };
+    
+    const timeSinceLastSeen = new Date().getTime() - opponent.lastSeen.toDate().getTime();
+    const timeUntilTimeout = TIMEOUT_MS - timeSinceLastSeen;
+    
+    const timeoutId = setTimeout(checkTimeout, timeUntilTimeout + 1000); // Check 1s after timeout is expected
+
+    return () => clearTimeout(timeoutId);
+  }, [game, playerSymbol, roomId]);
+
   const handleCellClick = useCallback(async (index: number) => {
     if (!game || !playerSymbol) return;
 
@@ -62,13 +116,19 @@ export function useGameState(roomId: string) {
     const newBoard = [...game.board];
     newBoard[index] = playerSymbol;
     const winner = checkWinner(newBoard);
+    
+    const updates: any = {
+      board: newBoard,
+      nextPlayer: game.nextPlayer === 'X' ? 'O' : 'X',
+      winner: winner,
+    };
+
+    if (winner && winner !== 'draw') {
+        updates.winReason = 'score';
+    }
 
     try {
-        await updateDoc(doc(db, 'games', roomId), {
-          board: newBoard,
-          nextPlayer: game.nextPlayer === 'X' ? 'O' : 'X',
-          winner: winner,
-        });
+        await updateDoc(doc(db, 'games', roomId), updates);
     } catch (e) {
         console.error("Error making move:", e);
         toast({ title: "Error", description: "Could not make move. Check Firestore rules.", variant: "destructive"});
@@ -79,10 +139,11 @@ export function useGameState(roomId: string) {
     if (!game) return;
 
     try {
-        await updateDoc(doc(db, 'games', roomId), {
+        await updateDoc(doc(db, 'games',roomId), {
             board: Array(9).fill(null),
             nextPlayer: 'X',
             winner: null,
+            winReason: null,
         });
     } catch(e) {
         console.error("Error resetting game:", e);
@@ -91,32 +152,29 @@ export function useGameState(roomId: string) {
   }, [game, roomId, toast]);
 
   const handleLeaveRoom = useCallback(async () => {
-    if (playerId) {
-        const gameRef = doc(db, 'games', roomId);
-        try {
-            const docSnap = await getDoc(gameRef);
-            if (docSnap.exists()) {
-                const gameData = docSnap.data() as Game;
-                if (!gameData.winner) {
-                    const updates: any = {};
-                    if (gameData.players.X?.id === playerId) {
-                        updates['players.X'] = { id: null, name: null };
-                        updates.playerCount = gameData.playerCount - 1;
-                    } else if (gameData.players.O?.id === playerId) {
-                        updates['players.O'] = { id: null, name: null };
-                        updates.playerCount = gameData.playerCount - 1;
-                    }
-                    if (Object.keys(updates).length > 1) {
-                        await updateDoc(gameRef, updates);
-                    }
-                }
+    if (!game || !playerSymbol) {
+        router.push('/');
+        return;
+    }
+
+    const gameRef = doc(db, 'games', roomId);
+    try {
+        const docSnap = await getDoc(gameRef);
+        if (docSnap.exists()) {
+            const gameData = docSnap.data() as Game;
+            if (!gameData.winner) {
+                const opponentSymbol = playerSymbol === 'X' ? 'O' : 'X';
+                await updateDoc(gameRef, {
+                    winner: opponentSymbol,
+                    winReason: 'abandonment'
+                });
             }
-        } catch (error) {
-            console.error("Error updating state on leave:", error);
         }
+    } catch (error) {
+        console.error("Error updating state on leave:", error);
     }
     router.push('/');
-  }, [playerId, roomId, router]);
+  }, [game, playerSymbol, roomId, router]);
 
 
   return { game, playerSymbol, loading, error, handleCellClick, handlePlayAgain, handleLeaveRoom };

@@ -8,21 +8,14 @@ import { useGameState } from '@/hooks/use-game-state';
 import { TicTacToeBoard } from '@/components/tic-tac-toe-board';
 import { GameResultDialog } from '@/components/game-result-dialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 
 export function GameRoom({ roomId }: { roomId: string }) {
   const { game, playerSymbol, loading, error, handleCellClick, handlePlayAgain, handleLeaveRoom } = useGameState(roomId);
   const { toast } = useToast();
-  const [hasBeenFull, setHasBeenFull] = React.useState(false);
 
-  React.useEffect(() => {
-    if (game?.playerCount === 2) {
-      setHasBeenFull(true);
-    }
-  }, [game?.playerCount]);
-  
   const copyRoomId = () => {
     navigator.clipboard.writeText(roomId);
     toast({
@@ -60,11 +53,11 @@ export function GameRoom({ roomId }: { roomId: string }) {
   const getStatusMessage = () => {
     if (game.winner) {
         if (game.winner === 'draw') return "It's a draw! Stalemate.";
-        if (game.winner === playerSymbol) return "Victory is yours!";
-        return "You have been defeated.";
-    }
-    if (hasBeenFull && game.playerCount < 2) {
-        return "Your opponent has fled the battle.";
+        const winnerName = game.players[game.winner]?.name || `Player ${game.winner}`;
+        if (game.winReason === 'timeout' || game.winReason === 'abandonment') {
+           return `${winnerName} wins as their opponent left.`
+        }
+        return `${winnerName} is victorious!`;
     }
     if (game.playerCount < 2) return "Waiting for a challenger...";
     
