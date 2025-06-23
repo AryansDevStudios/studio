@@ -55,3 +55,25 @@ Vercel is the company behind Next.js, so their hosting platform is purpose-built
 Netlify is another top-tier platform that provides continuous deployment, serverless functions, and a robust free tier. It's known for its ease of use and powerful features that work great with Next.js.
 
 Both Vercel and Netlify offer seamless deployment experiences, typically by linking to your GitHub, GitLab, or Bitbucket account and automatically building and deploying your app whenever you push a change.
+
+## What to Deploy
+
+When you use a modern hosting platform like Firebase, Vercel, or Netlify, you typically **don't upload files or folders manually**. Instead, you connect the hosting service to your Git repository (e.g., on GitHub). The service then automatically runs the build process and deploys your application.
+
+Your repository should contain all of your project's source code. Essentially, this is every file you see in the project, with the major exception of the `node_modules` folder, which is generated automatically by the hosting provider.
+
+Here are the key files and folders that need to be in your repository for a successful deployment:
+
+*   **`src/`**: Contains all your application source code, including pages and components.
+*   **`package.json`**: Lists all your project's dependencies. This is crucial for the hosting provider to install the necessary packages.
+*   **`next.config.ts`**: The configuration file for Next.js.
+*   **`tailwind.config.ts`**: The configuration for your app's styling.
+*   **`tsconfig.json`**: The TypeScript configuration.
+*   **`apphosting.yaml`**: Firebase App Hosting configuration.
+*   **`.firebaserc` & `firebase.json`**: Firebase project configuration (created after running `firebase init`).
+*   **`README.md`**: This file!
+
+You do **not** need to upload:
+
+*   **`node_modules/`**: This folder contains all the installed packages and can be very large. The hosting service will install these for you based on your `package.json`.
+*   **`.next/`**: This is the build output folder. The hosting service will create this for you when it builds your project.
