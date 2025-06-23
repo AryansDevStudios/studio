@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { doc, onSnapshot, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { checkWinner } from '@/lib/game-logic';
@@ -16,6 +16,7 @@ export function useGameState(roomId: string) {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const router = useRouter();
+  const opponentTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (!roomId || !playerId) return;
@@ -70,7 +71,15 @@ export function useGameState(roomId: string) {
 
   // Check for opponent timeout
   useEffect(() => {
+    // Always clear any existing timeout when the effect re-runs or unmounts.
+    const clearTimer = () => {
+      if (opponentTimeoutRef.current) {
+        clearTimeout(opponentTimeoutRef.current);
+      }
+    };
+
     if (!game || game.playerCount < 2 || game.winner || !playerSymbol) {
+      clearTimer();
       return;
     }
 
@@ -79,9 +88,19 @@ export function useGameState(roomId: string) {
     const opponentSymbol = playerSymbol === 'X' ? 'O' : 'X';
     const opponent = game.players[opponentSymbol];
 
-    if (!opponent.id || !opponent.lastSeen) return;
+    if (!opponent.id || !opponent.lastSeen) {
+      clearTimer();
+      return;
+    }
 
-    const checkTimeout = () => {
+    const timeSinceLastSeen = new Date().getTime() - opponent.lastSeen.toDate().getTime();
+    const timeUntilTimeout = TIMEOUT_MS - timeSinceLastSeen;
+
+    clearTimer(); // Clear previous timer before setting a new one.
+
+    if (timeUntilTimeout > 0) {
+      // Opponent is still active, set a timeout to check again after the remaining time.
+      opponentTimeoutRef.current = setTimeout(() => {
         getDoc(gameRef).then(docSnap => {
             if (docSnap.exists()) {
                 const currentData = docSnap.data() as Game;
@@ -96,14 +115,13 @@ export function useGameState(roomId: string) {
                 }
             }
         });
-    };
-    
-    const timeSinceLastSeen = new Date().getTime() - opponent.lastSeen.toDate().getTime();
-    const timeUntilTimeout = TIMEOUT_MS - timeSinceLastSeen;
-    
-    const timeoutId = setTimeout(checkTimeout, timeUntilTimeout + 1000); // Check 1s after timeout is expected
+      }, timeUntilTimeout + 1000); // Check 1s after timeout is expected
+    } else {
+      // Opponent has already timed out.
+      updateDoc(gameRef, { winner: playerSymbol, winReason: 'timeout' });
+    }
 
-    return () => clearTimeout(timeoutId);
+    return clearTimer;
   }, [game, playerSymbol, roomId]);
 
   const handleCellClick = useCallback(async (index: number) => {
@@ -157,18 +175,21 @@ export function useGameState(roomId: string) {
         return;
     }
 
+    // If game is already over, just navigate away.
+    if (game.winner) {
+        router.push('/');
+        return;
+    }
+
     const gameRef = doc(db, 'games', roomId);
     try {
-        const docSnap = await getDoc(gameRef);
-        if (docSnap.exists()) {
-            const gameData = docSnap.data() as Game;
-            if (!gameData.winner) {
-                const opponentSymbol = playerSymbol === 'X' ? 'O' : 'X';
-                await updateDoc(gameRef, {
-                    winner: opponentSymbol,
-                    winReason: 'abandonment'
-                });
-            }
+        const opponentSymbol = playerSymbol === 'X' ? 'O' : 'X';
+        // Only declare a winner by abandonment if an opponent actually exists.
+        if (game.players[opponentSymbol]?.id) {
+            await updateDoc(gameRef, {
+                winner: opponentSymbol,
+                winReason: 'abandonment'
+            });
         }
     } catch (error) {
         console.error("Error updating state on leave:", error);
