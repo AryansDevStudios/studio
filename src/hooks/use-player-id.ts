@@ -8,10 +8,10 @@ export function usePlayerId() {
   const [playerId, setPlayerId] = useState<string | null>(null);
 
   useEffect(() => {
-    let storedPlayerId = localStorage.getItem('tictactoe-player-id');
+    let storedPlayerId = sessionStorage.getItem('tictactoe-player-id');
     if (!storedPlayerId) {
       storedPlayerId = generatePlayerId();
-      localStorage.setItem('tictactoe-player-id', storedPlayerId);
+      sessionStorage.setItem('tictactoe-player-id', storedPlayerId);
     }
     setPlayerId(storedPlayerId);
   }, []);
