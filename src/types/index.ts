@@ -2,11 +2,16 @@ import type { Timestamp } from 'firebase/firestore';
 
 export type PlayerSymbol = 'X' | 'O';
 
+export interface Player {
+  id: string | null;
+  name: string | null;
+}
+
 export interface Game {
   board: (PlayerSymbol | null)[];
   players: {
-    X: string | null;
-    O: string | null;
+    X: Player;
+    O: Player;
   };
   playerCount: number;
   nextPlayer: PlayerSymbol;

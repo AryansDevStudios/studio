@@ -67,8 +67,11 @@ export function GameRoom({ roomId }: { roomId: string }) {
         return "Your opponent has fled the battle.";
     }
     if (game.playerCount < 2) return "Waiting for a challenger...";
+    
+    const nextPlayerName = game.players[game.nextPlayer]?.name || `Player ${game.nextPlayer}`;
+
     if (game.nextPlayer === playerSymbol) return "Your turn to strike!";
-    return `Awaiting opponent's move...`;
+    return `Awaiting ${nextPlayerName}'s move...`;
   };
 
   const isMyTurn = game.nextPlayer === playerSymbol && !game.winner;
@@ -100,7 +103,7 @@ export function GameRoom({ roomId }: { roomId: string }) {
                         </Badge>
                         {playerSymbol && (
                              <p className="text-muted-foreground flex items-center justify-center gap-2">
-                                You are Player {playerSymbol}
+                                You are {game.players[playerSymbol]?.name || `Player ${playerSymbol}`}
                                 {playerSymbol === 'X' ? <Sword className="h-5 w-5 text-destructive" /> : <Shield className="h-5 w-5 text-accent" />}
                             </p>
                         )}

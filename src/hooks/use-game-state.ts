@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { doc, onSnapshot, updateDoc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { checkWinner } from '@/lib/game-logic';
 import type { Game, PlayerSymbol } from '@/types';
@@ -27,25 +27,15 @@ export function useGameState(roomId: string) {
       if (docSnap.exists()) {
         const gameData = docSnap.data() as Game;
         
-        if (gameData.playerCount < 2 && gameData.players.X !== playerId && gameData.players.O === null) {
-          try {
-            await updateDoc(gameRef, {
-              'players.O': playerId,
-              playerCount: 2
-            });
-            setGame({ 
-                ...gameData, 
-                players: { ...gameData.players, O: playerId },
-                playerCount: 2
-            });
-          } catch (e) {
-             console.error("Error joining game as player O:", e);
-             setError("Failed to join the game. Check Firestore rules.");
-          }
+        const isPlayer = gameData.players.X?.id === playerId || gameData.players.O?.id === playerId;
+        
+        if (!isPlayer && gameData.playerCount >= 2) {
+          setError("This game is full and you are not a player.");
+          setGame(null);
         } else {
-            setGame(gameData);
+          setGame(gameData);
+          setError(null);
         }
-        setError(null);
       } else {
         setError("Game not found. It might have been deleted or the code is incorrect.");
         setGame(null);
@@ -60,7 +50,7 @@ export function useGameState(roomId: string) {
     return () => unsubscribe();
   }, [roomId, playerId]);
 
-  const playerSymbol: PlayerSymbol | null = game && playerId === game.players.X ? 'X' : (game && playerId === game.players.O ? 'O' : null);
+  const playerSymbol: PlayerSymbol | null = game && playerId === game.players.X?.id ? 'X' : (game && playerId === game.players.O?.id ? 'O' : null);
 
   const handleCellClick = useCallback(async (index: number) => {
     if (!game || !playerSymbol) return;
@@ -88,18 +78,12 @@ export function useGameState(roomId: string) {
   const handlePlayAgain = useCallback(async () => {
     if (!game) return;
 
-    const newGameData = {
-        board: Array(9).fill(null),
-        nextPlayer: 'X' as PlayerSymbol,
-        winner: null,
-        players: game.players,
-        playerCount: game.playerCount,
-        roomId: game.roomId,
-        createdAt: serverTimestamp(),
-    };
-
     try {
-        await setDoc(doc(db, 'games', roomId), newGameData);
+        await updateDoc(doc(db, 'games', roomId), {
+            board: Array(9).fill(null),
+            nextPlayer: 'X',
+            winner: null,
+        });
     } catch(e) {
         console.error("Error resetting game:", e);
         toast({ title: "Error", description: "Could not restart game. Check Firestore rules.", variant: "destructive"});
@@ -115,14 +99,14 @@ export function useGameState(roomId: string) {
                 const gameData = docSnap.data() as Game;
                 if (!gameData.winner) {
                     const updates: any = {};
-                    if (gameData.players.X === playerId) {
-                        updates['players.X'] = null;
+                    if (gameData.players.X?.id === playerId) {
+                        updates['players.X'] = { id: null, name: null };
                         updates.playerCount = gameData.playerCount - 1;
-                    } else if (gameData.players.O === playerId) {
-                        updates['players.O'] = null;
+                    } else if (gameData.players.O?.id === playerId) {
+                        updates['players.O'] = { id: null, name: null };
                         updates.playerCount = gameData.playerCount - 1;
                     }
-                    if (Object.keys(updates).length > 0) {
+                    if (Object.keys(updates).length > 1) {
                         await updateDoc(gameRef, updates);
                     }
                 }
