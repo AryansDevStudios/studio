@@ -18,20 +18,20 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-const StatCard = ({ title, value, icon }: { title: string; value: number; icon: React.ReactNode }) => (
+const StatCard = ({ title, value, icon, isLoading }: { title: string; value: number; icon: React.ReactNode; isLoading?: boolean }) => (
     <Card className="bg-background/70 backdrop-blur-sm">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{title}</CardTitle>
             {icon}
         </CardHeader>
         <CardContent>
-            <div className="text-2xl font-bold">{value}</div>
+            <div className="text-2xl font-bold">{isLoading ? "..." : value}</div>
         </CardContent>
     </Card>
 );
 
 export default function Home() {
-    const { stats, resetStats } = useGameStats();
+    const { stats, resetStats, isLoaded } = useGameStats();
 
     return (
         <main className="flex min-h-screen w-full flex-col items-center bg-background p-4 sm:p-8">
@@ -53,13 +53,13 @@ export default function Home() {
 
                 <div className="animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-4">
-                        <StatCard title="Games Played" value={stats.played} icon={<Gamepad2 className="h-4 w-4 text-muted-foreground" />} />
-                        <StatCard title="Wins" value={stats.wins} icon={<Trophy className="h-4 w-4 text-muted-foreground" />} />
-                        <StatCard title="Losses" value={stats.losses} icon={<Frown className="h-4 w-4 text-muted-foreground" />} />
-                        <StatCard title="Draws" value={stats.draws} icon={<Handshake className="h-4 w-4 text-muted-foreground" />} />
+                        <StatCard title="Games Played" value={stats.played} icon={<Gamepad2 className="h-4 w-4 text-muted-foreground" />} isLoading={!isLoaded} />
+                        <StatCard title="Wins" value={stats.wins} icon={<Trophy className="h-4 w-4 text-muted-foreground" />} isLoading={!isLoaded} />
+                        <StatCard title="Losses" value={stats.losses} icon={<Frown className="h-4 w-4 text-muted-foreground" />} isLoading={!isLoaded} />
+                        <StatCard title="Draws" value={stats.draws} icon={<Handshake className="h-4 w-4 text-muted-foreground" />} isLoading={!isLoaded} />
                     </div>
                     <div className="flex justify-end items-center gap-4 text-sm text-muted-foreground mb-12">
-                         {stats.lastReset && (
+                         {isLoaded && stats.lastReset && (
                            <p>Last reset: {new Date(stats.lastReset).toLocaleDateString()}</p>
                          )}
                          <AlertDialog>

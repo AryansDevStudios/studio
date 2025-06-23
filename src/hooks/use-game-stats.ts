@@ -14,19 +14,19 @@ const getInitialStats = (): GameStats => ({
 });
 
 export function useGameStats() {
-  const [stats, setStats] = useState<GameStats>(() => {
-    if (typeof window === 'undefined') {
-      return getInitialStats();
-    }
+  const [stats, setStats] = useState<GameStats>(getInitialStats());
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
     try {
       const storedStats = window.localStorage.getItem(STATS_KEY);
       const parsedStats = storedStats ? JSON.parse(storedStats) : getInitialStats();
-      return { ...getInitialStats(), ...parsedStats };
+      setStats({ ...getInitialStats(), ...parsedStats });
     } catch (error) {
       console.error("Error reading stats from localStorage", error);
-      return getInitialStats();
     }
-  });
+    setIsLoaded(true);
+  }, []);
 
   const updateStats = useCallback((result: 'win' | 'loss' | 'draw') => {
     setStats(prevStats => {
@@ -76,5 +76,5 @@ export function useGameStats() {
     };
   }, []);
 
-  return { stats, updateStats, resetStats };
+  return { stats, updateStats, resetStats, isLoaded };
 }
