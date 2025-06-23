@@ -76,26 +76,34 @@ export function CreateOrJoinRoom() {
     setIsJoining(true);
     const { roomId } = data;
     try {
+      let playerId = localStorage.getItem('tictactoe-player-id');
+      if (!playerId) {
+        playerId = Math.random().toString(36).substring(2, 9);
+        localStorage.setItem('tictactoe-player-id', playerId);
+      }
+      
       const roomRef = doc(db, 'games', roomId);
       const roomDoc = await getDoc(roomRef);
 
       if (roomDoc.exists()) {
         const gameData = roomDoc.data();
-        if (gameData.players.X !== playerId && gameData.playerCount < 2) {
-          const playerId = localStorage.getItem('tictactoe-player-id') || Math.random().toString(36).substring(2, 9);
-          if (!localStorage.getItem('tictactoe-player-id')) {
-              localStorage.setItem('tictactoe-player-id', playerId);
-          }
-          
+        
+        // If player is already in the game, just go to the room
+        if (gameData.players.X === playerId || gameData.players.O === playerId) {
+            router.push(`/${roomId}`);
+            return;
+        }
+
+        // If room is not full, join as player 'O'
+        if (gameData.playerCount < 2) {
           await setDoc(roomRef, { 
               players: { ...gameData.players, O: playerId },
               playerCount: 2,
            }, { merge: true });
           
           router.push(`/${roomId}`);
-        } else if (gameData.players.X === playerId || gameData.players.O === playerId) {
-            router.push(`/${roomId}`);
         } else {
+          // Room is full
           toast({ title: "Room Full", description: "This room is already full.", variant: "destructive" });
           setIsJoining(false);
         }
