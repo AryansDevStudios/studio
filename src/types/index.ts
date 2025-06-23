@@ -20,3 +20,12 @@ export interface Game {
   createdAt: Timestamp;
   roomId: string;
 }
+
+export interface GameStats {
+  played: number;
+  wins: number;
+  losses: number;
+  draws: number;
+}
+
+    

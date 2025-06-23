@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { Trophy, Frown, Handshake, LogOut, Loader2 } from 'lucide-react';
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -15,6 +14,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { Game, PlayerSymbol } from '@/types';
 import { Button } from './ui/button';
+import { useGameStats } from '@/hooks/use-game-stats';
 
 interface GameResultDialogProps {
   game: Game | null;
@@ -25,16 +25,31 @@ interface GameResultDialogProps {
 export function GameResultDialog({ game, onPlayAgain, playerSymbol }: GameResultDialogProps) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [isWaiting, setIsWaiting] = React.useState(false);
+  const { updateStats } = useGameStats();
+  const hasUpdatedStats = React.useRef(false);
+
 
   React.useEffect(() => {
     if (game?.winner) {
+      if (playerSymbol && !hasUpdatedStats.current) {
+        if (game.winner === 'draw') {
+          updateStats('draw');
+        } else if (game.winner === playerSymbol) {
+          updateStats('win');
+        } else {
+          updateStats('loss');
+        }
+        hasUpdatedStats.current = true;
+      }
+
       setIsWaiting(false); // Reset waiting state if a winner is declared
       const timer = setTimeout(() => setIsOpen(true), 500);
       return () => clearTimeout(timer);
     } else {
       setIsOpen(false);
+      hasUpdatedStats.current = false; // Reset for the next game
     }
-  }, [game?.winner]);
+  }, [game?.winner, playerSymbol, updateStats]);
 
   if (!game) return null;
 
@@ -96,3 +111,5 @@ export function GameResultDialog({ game, onPlayAgain, playerSymbol }: GameResult
     </AlertDialog>
   );
 }
+
+    
