@@ -41,3 +41,17 @@ You can deploy and host this application for free using the Firebase "Spark" pla
     ```
 
 And that's it! The Firebase CLI will build your Next.js application and deploy it. After a few moments, it will give you a public URL where you can see your live Tic-Tac-Toe Arena.
+
+## Other Free Hosting Options
+
+While Firebase Hosting is an excellent and well-integrated choice, the web development ecosystem offers several other fantastic platforms for deploying Next.js applications for free. Here are a couple of popular alternatives:
+
+### Vercel
+
+Vercel is the company behind Next.js, so their hosting platform is purpose-built for it. They offer a generous free tier that's perfect for personal projects and prototypes. Deployment is often as simple as connecting your Git repository.
+
+### Netlify
+
+Netlify is another top-tier platform that provides continuous deployment, serverless functions, and a robust free tier. It's known for its ease of use and powerful features that work great with Next.js.
+
+Both Vercel and Netlify offer seamless deployment experiences, typically by linking to your GitHub, GitLab, or Bitbucket account and automatically building and deploying your app whenever you push a change.
