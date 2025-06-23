@@ -26,6 +26,5 @@ export interface GameStats {
   wins: number;
   losses: number;
   draws: number;
+  lastReset: string | null;
 }
-
-    

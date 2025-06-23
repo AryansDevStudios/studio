@@ -3,8 +3,20 @@
 import { CreateOrJoinRoom } from '@/components/create-or-join-room';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useGameStats } from '@/hooks/use-game-stats';
-import { Gamepad2, Users, BarChart, Zap } from 'lucide-react';
+import { Gamepad2, Zap, Palette, UserCheck, Code, RotateCw, Trophy, Frown, Handshake } from 'lucide-react';
 import * as React from 'react';
+import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const StatCard = ({ title, value, icon }: { title: string; value: number; icon: React.ReactNode }) => (
     <Card className="bg-background/70 backdrop-blur-sm">
@@ -19,7 +31,7 @@ const StatCard = ({ title, value, icon }: { title: string; value: number; icon: 
 );
 
 export default function Home() {
-    const { stats } = useGameStats();
+    const { stats, resetStats } = useGameStats();
 
     return (
         <main className="flex min-h-screen w-full flex-col items-center bg-background p-4 sm:p-8">
@@ -39,11 +51,38 @@ export default function Home() {
                     <CreateOrJoinRoom />
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-12 animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
-                    <StatCard title="Games Played" value={stats.played} icon={<Gamepad2 className="h-4 w-4 text-muted-foreground" />} />
-                    <StatCard title="Wins" value={stats.wins} icon={<Trophy className="h-4 w-4 text-muted-foreground" />} />
-                    <StatCard title="Losses" value={stats.losses} icon={<Frown className="h-4 w-4 text-muted-foreground" />} />
-                    <StatCard title="Draws" value={stats.draws} icon={<Handshake className="h-4 w-4 text-muted-foreground" />} />
+                <div className="animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-4">
+                        <StatCard title="Games Played" value={stats.played} icon={<Gamepad2 className="h-4 w-4 text-muted-foreground" />} />
+                        <StatCard title="Wins" value={stats.wins} icon={<Trophy className="h-4 w-4 text-muted-foreground" />} />
+                        <StatCard title="Losses" value={stats.losses} icon={<Frown className="h-4 w-4 text-muted-foreground" />} />
+                        <StatCard title="Draws" value={stats.draws} icon={<Handshake className="h-4 w-4 text-muted-foreground" />} />
+                    </div>
+                    <div className="flex justify-end items-center gap-4 text-sm text-muted-foreground mb-12">
+                         {stats.lastReset && (
+                           <p>Last reset: {new Date(stats.lastReset).toLocaleDateString()}</p>
+                         )}
+                         <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="sm" className="text-xs">
+                                    <RotateCw className="mr-2 h-3 w-3" />
+                                    Reset Stats
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This will permanently reset your game statistics. This action cannot be undone.
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={resetStats}>Reset</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                         </AlertDialog>
+                    </div>
                 </div>
 
                 <div className="animate-fade-in-up" style={{ animationDelay: '0.8s' }}>
@@ -87,60 +126,3 @@ export default function Home() {
         </main>
     );
 }
-
-// Dummy icons for illustration since they might not be in lucide-react
-const Trophy = (props) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
-    <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
-    <path d="M4 22h16"/>
-    <path d="M10 14.66V17c0 .55-.47.98-.97 1.21A3.48 3.48 0 0 1 9 19.5a3.5 3.5 0 0 1-2-3.44V14.7"/>
-    <path d="M15 14.66V17c0 .55.47.98.97 1.21A3.48 3.48 0 0 0 16 19.5a3.5 3.5 0 0 0 2-3.44V14.7"/>
-    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2z"/>
-    <path d="M12 2v10"/>
-  </svg>
-);
-const Frown = (props) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10" />
-    <path d="M16 16s-1.5-2-4-2-4 2-4 2" />
-    <line x1="9" y1="9" x2="9.01" y2="9" />
-    <line x1="15" y1="9" x2="15.01" y2="9" />
-  </svg>
-);
-
-const Handshake = (props) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M11 17a2 2 0 0 1-2 2H4.5a2.5 2.5 0 0 1 0-5H8" />
-    <path d="M14 14a2 2 0 0 0-2-2h-1" />
-    <path d="M13 11a2 2 0 0 0 2-2V4.5a2.5 2.5 0 0 0-5 0V8" />
-    <path d="M3 14a2 2 0 0 0 2 2h1" />
-  </svg>
-);
-
-const Palette = (props) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/>
-    <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/>
-    <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/>
-    <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/>
-    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.668 0-.92-.742-1.667-1.648-1.667-.926 0-1.648-.746-1.648-1.667 0-.92.742-1.666 1.648-1.666.926 0 1.648-.746 1.648-1.667 0-.92.742-1.666 1.648-1.666.926 0 1.648-.746 1.648-1.667 0-.92.742-1.666 1.648-1.666A10 10 0 0 0 12 2z"/>
-  </svg>
-);
-
-const UserCheck = (props) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-    <circle cx="9" cy="7" r="4" />
-    <polyline points="17 11 19 13 23 9" />
-  </svg>
-);
-
-const Code = (props) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="16 18 22 12 16 6" />
-    <polyline points="8 6 2 12 8 18" />
-  </svg>
-);
-
-    

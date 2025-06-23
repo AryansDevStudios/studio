@@ -10,6 +10,7 @@ const getInitialStats = (): GameStats => ({
   wins: 0,
   losses: 0,
   draws: 0,
+  lastReset: null,
 });
 
 export function useGameStats() {
@@ -19,7 +20,8 @@ export function useGameStats() {
     }
     try {
       const storedStats = window.localStorage.getItem(STATS_KEY);
-      return storedStats ? JSON.parse(storedStats) : getInitialStats();
+      const parsedStats = storedStats ? JSON.parse(storedStats) : getInitialStats();
+      return { ...getInitialStats(), ...parsedStats };
     } catch (error) {
       console.error("Error reading stats from localStorage", error);
       return getInitialStats();
@@ -42,12 +44,26 @@ export function useGameStats() {
     });
   }, []);
   
+  const resetStats = useCallback(() => {
+    const newStats = {
+      ...getInitialStats(),
+      lastReset: new Date().toISOString(),
+    };
+    setStats(newStats);
+    try {
+      window.localStorage.setItem(STATS_KEY, JSON.stringify(newStats));
+    } catch (error) {
+      console.error("Error resetting stats in localStorage", error);
+    }
+  }, []);
+
   // This effect will sync stats across tabs if they are on the same page
   useEffect(() => {
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === STATS_KEY && event.newValue) {
         try {
-          setStats(JSON.parse(event.newValue));
+          const parsedStats = JSON.parse(event.newValue);
+          setStats({ ...getInitialStats(), ...parsedStats });
         } catch (error) {
             console.error("Error parsing stats from storage event", error);
         }
@@ -60,7 +76,5 @@ export function useGameStats() {
     };
   }, []);
 
-  return { stats, updateStats };
+  return { stats, updateStats, resetStats };
 }
-
-    
