@@ -56,6 +56,56 @@ Netlify is another top-tier platform that provides continuous deployment, server
 
 Both Vercel and Netlify offer seamless deployment experiences, typically by linking to your GitHub, GitLab, or Bitbucket account and automatically building and deploying your app whenever you push a change.
 
+## Environment Variables for Hosting
+
+When you deploy your application to a hosting provider like Vercel or Netlify, it needs to know your Firebase project's secret credentials to connect to your database. These are managed through **Environment Variables**.
+
+Your Firebase configuration is stored in variables like `NEXT_PUBLIC_FIREBASE_PROJECT_ID`. In the Firebase Studio preview, these are automatically provided for you. However, on an external service, you must add them yourself.
+
+### Steps to Configure Environment Variables on Netlify/Vercel:
+
+1.  **Find Your Firebase Credentials**:
+    *   Go to your [Firebase Console](https://console.firebase.google.com/).
+    *   Select your project.
+    *   Click the **Gear icon** next to "Project Overview" and select **Project settings**.
+    *   In the "General" tab, scroll down to the "Your apps" section.
+    *   Click on your web app (or create one if you haven't).
+    *   Select the **"Config"** radio button to see the `firebaseConfig` object. It will look like this:
+
+    ```javascript
+    const firebaseConfig = {
+      apiKey: "AIza...",
+      authDomain: "your-project-id.firebaseapp.com",
+      projectId: "your-project-id",
+      storageBucket: "your-project-id.appspot.com",
+      messagingSenderId: "12345...",
+      appId: "1:12345..."
+    };
+    ```
+
+2.  **Add Variables to Your Hosting Provider**:
+    *   Go to your project's dashboard on Netlify or Vercel.
+    *   Find the settings for **Environment Variables** (on Netlify, it's under `Site settings > Build & deploy > Environment`).
+    *   Add the following variables, copying the values from your Firebase config:
+        *   `NEXT_PUBLIC_FIREBASE_API_KEY`
+        *   `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
+        *   `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
+        *   `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
+        *   `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
+        *   `NEXT_PUBLIC_FIREBASE_APP_ID`
+
+3.  **Redeploy**:
+    *   After adding the variables, trigger a new deployment on your hosting provider. Your app should now be able to connect to Firebase successfully.
+
+**(Optional) For Local Development:**
+
+If you were running this project on your own computer (outside of Firebase Studio), you would create a file named `.env.local` in the project's root directory and add the variables there:
+```
+NEXT_PUBLIC_FIREBASE_API_KEY=your_value_here
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_value_here
+...
+```
+
 ## What to Deploy
 
 When you use a modern hosting platform like Firebase, Vercel, or Netlify, you typically **don't upload files or folders manually**. Instead, you connect the hosting service to your Git repository (e.g., on GitHub). The service then automatically runs the build process and deploys your application.
