@@ -86,13 +86,17 @@ Your Firebase configuration is stored in variables like `NEXT_PUBLIC_FIREBASE_PR
 2.  **Add Variables to Your Hosting Provider**:
     *   Go to your project's dashboard on Netlify or Vercel.
     *   Find the settings for **Environment Variables** (on Netlify, it's under `Site settings > Build & deploy > Environment`).
-    *   Add the following variables, copying the values from your Firebase config:
-        *   `NEXT_PUBLIC_FIREBASE_API_KEY`
-        *   `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
-        *   `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
-        *   `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
-        *   `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
-        *   `NEXT_PUBLIC_FIREBASE_APP_ID`
+    *   In the Netlify dashboard, you will add a new environment variable for each of the following keys. The **Key** is the name on the left, and the **Value** is what you will copy from your Firebase project settings.
+
+| Key (in Netlify) | Value (from your Firebase config) |
+| --- | --- |
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | The `apiKey` value |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | The `authDomain` value |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | The `projectId` value |
+| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | The `storageBucket` value |
+| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`| The `messagingSenderId` value |
+| `NEXT_PUBLIC_FIREBASE_APP_ID` | The `appId` value |
+
 
 3.  **Redeploy**:
     *   After adding the variables, trigger a new deployment on your hosting provider. Your app should now be able to connect to Firebase successfully.
