@@ -1,133 +1,139 @@
-# Firebase Studio
+# 🎮 Tic-Tac-Toe Arena (`studio`)
 
-This is a NextJS starter in Firebase Studio.
+> Real-time multiplayer Tic-Tac-Toe arena with 4-digit match rooms, live board synchronization, and persistent player stats tracking.
 
-To get started, take a look at src/app/page.tsx.
+![Next.js](https://img.shields.io/badge/Next.js-v15.3-000000?logo=next.js&logoColor=white)
+![React](https://img.shields.io/badge/React-v18.3-61DAFB?logo=react&logoColor=black)
+![Firebase](https://img.shields.io/badge/Firebase-v11%20Firestore-FFCA28?logo=firebase&logoColor=black)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-v3.4-38B2AC?logo=tailwind-css&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-v5-3178C6?logo=typescript&logoColor=white)
+![Status](https://img.shields.io/badge/Status-Active-brightgreen)
+![License](https://img.shields.io/badge/License-MIT-blue)
 
-## Deploying for Free with Firebase
+---
 
-You can deploy and host this application for free using the Firebase "Spark" plan, which has a generous free tier for hosting, database usage, and more.
+## 📖 Overview
+
+**Tic-Tac-Toe Arena** is a real-time multiplayer web game crafted with Next.js 15, React 18, and Firebase Firestore. It transforms the classic paper-and-pencil game of X's and O's into a competitive online arena where players create custom 4-digit match rooms, share room codes with opponents anywhere in the world, and battle with synchronized live state.
+
+The platform provides a responsive, accessible interface with real-time turn detection, animated game pieces, comprehensive win/loss/draw stat tracking, and one-click rematch triggers.
+
+---
+
+## ✨ Features
+
+- **4-Digit Matchmaking Rooms**: Quick-create or join matches using memorable 4-digit numeric room codes (`^\d{4}$`) with automatic room collision handling.
+- **Real-Time Board Sync**: Sub-second synchronization of game moves and player turns across remote clients powered by Firebase Firestore document subscriptions.
+- **Custom Player Identity**: Personalized player names with unique guest player ID generation persisted across sessions.
+- **Automated Win & Draw Detection**: Instant algorithmic checking across 3x3 rows, columns, and diagonals with animated highlights for winning combinations.
+- **Interactive Game Result Dialog**: Real-time modal upon match conclusion displaying the victor or draw notification with instant rematch and return-to-lobby options.
+- **One-Click Rematches**: Reset the board state immediately for another round without requiring players to enter new room codes.
+- **Comprehensive Player Stats**: Local tracking of total matches played, victories, defeats, and ties, featuring a confirmation dialog to reset historical records.
+- **Fluid & Accessible Interface**: Polished UI built with Radix UI primitives, Lucide icons, glassmorphism cards, and Tailwind CSS animations.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Framework**: [Next.js 15.3](https://nextjs.org/) (App Router)
+- **Frontend Library**: [React 18.3](https://react.dev/)
+- **Language**: [TypeScript 5](https://www.typescriptlang.org/)
+- **Database & State Sync**: [Firebase v11](https://firebase.google.com/) (Cloud Firestore)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/), Radix UI Primitives, Lucide Icons, `tailwind-merge`
+- **Validation & Forms**: React Hook Form, Zod
+
+---
+
+## 📁 Project Structure
+
+```
+studio/
+├── apphosting.yaml           # Firebase App Hosting configuration
+├── next.config.ts            # Next.js configuration
+├── package.json              # Project dependencies & scripts
+├── tailwind.config.ts        # Tailwind design tokens & themes
+├── tsconfig.json             # TypeScript compiler configuration
+└── src/
+    ├── app/
+    │   ├── layout.tsx        # Root application layout
+    │   ├── page.tsx          # Main lobby, matchmaking & stats dashboard
+    │   └── [roomId]/
+    │       └── page.tsx      # Dynamic match room route and game container
+    ├── components/
+    │   ├── create-or-join-room.tsx # 4-digit room code input and creator dialog
+    │   ├── game-result-dialog.tsx  # Victory/draw modal with rematch actions
+    │   ├── game-room.tsx     # Active game orchestrator & player status cards
+    │   ├── player-name-dialog.tsx  # Name prompt dialog before match entry
+    │   ├── tic-tac-toe-board.tsx   # 3x3 interactive board with turn sync
+    │   └── ui/               # Radix UI primitives (alert-dialog, card, tabs, etc.)
+    ├── hooks/
+    │   ├── use-game-stats.ts # Win/loss/draw persistent analytics hook
+    │   ├── use-player-id.ts  # Unique client player ID generator
+    │   └── use-toast.ts      # UI notification dispatch hook
+    └── lib/
+        ├── firebase.ts       # Firebase app initialization & Firestore client
+        └── utils.ts          # Styling helper utilities
+```
+
+---
+
+## 🚀 Getting Started
 
 ### Prerequisites
 
-1.  **Node.js**: Make sure you have Node.js installed on your machine.
-2.  **Firebase CLI**: If you don't have it, install the Firebase Command Line Interface globally by running:
-    ```bash
-    npm install -g firebase-tools
-    ```
+- Node.js `18.x` or later
+- npm or pnpm
+- A Firebase project with **Cloud Firestore** enabled
 
-### Deployment Steps
+### 1. Clone Repository
 
-1.  **Login to Firebase**:
-    Open your terminal in your project's folder and log in to your Google account:
-    ```bash
-    firebase login
-    ```
-
-2.  **Initialize Firebase in your project**:
-    In the root directory of this project, run the initialization command. This safely creates configuration files without overwriting your app code.
-    ```bash
-    firebase init hosting
-    ```
-    - When prompted, choose to **Use an existing project** (or create a new one if you haven't already).
-    - When asked for your public directory, just press **Enter**. Firebase is smart and will detect your Next.js setup from the `apphosting.yaml` file.
-    - When asked to "Configure as a single-page app", answer **No (N)**, as Next.js handles its own routing.
-    - This will create a `.firebaserc` file (to link to your Firebase project) and a `firebase.json` file (for hosting configuration).
-
-3.  **Deploy your app**:
-    After initialization is complete, simply run the deploy command:
-    ```bash
-    firebase deploy
-    ```
-
-And that's it! The Firebase CLI will build your Next.js application and deploy it. After a few moments, it will give you a public URL where you can see your live Tic-Tac-Toe Arena.
-
-## Other Free Hosting Options
-
-While Firebase Hosting is an excellent and well-integrated choice, the web development ecosystem offers several other fantastic platforms for deploying Next.js applications for free. Here are a couple of popular alternatives:
-
-### Vercel
-
-Vercel is the company behind Next.js, so their hosting platform is purpose-built for it. They offer a generous free tier that's perfect for personal projects and prototypes. Deployment is often as simple as connecting your Git repository.
-
-### Netlify
-
-Netlify is another top-tier platform that provides continuous deployment, serverless functions, and a robust free tier. It's known for its ease of use and powerful features that work great with Next.js.
-
-Both Vercel and Netlify offer seamless deployment experiences, typically by linking to your GitHub, GitLab, or Bitbucket account and automatically building and deploying your app whenever you push a change.
-
-## Environment Variables for Hosting
-
-When you deploy your application to a hosting provider like Vercel or Netlify, it needs to know your Firebase project's secret credentials to connect to your database. These are managed through **Environment Variables**.
-
-Your Firebase configuration is stored in variables like `NEXT_PUBLIC_FIREBASE_PROJECT_ID`. In the Firebase Studio preview, these are automatically provided for you. However, on an external service, you must add them yourself.
-
-### Steps to Configure Environment Variables on Netlify/Vercel:
-
-1.  **Find Your Firebase Credentials**:
-    *   Go to your [Firebase Console](https://console.firebase.google.com/).
-    *   Select your project.
-    *   Click the **Gear icon** next to "Project Overview" and select **Project settings**.
-    *   In the "General" tab, scroll down to the "Your apps" section.
-    *   Click on your web app (or create one if you haven't).
-    *   Select the **"Config"** radio button to see the `firebaseConfig` object. It will look like this:
-
-    ```javascript
-    const firebaseConfig = {
-      apiKey: "AIza...",
-      authDomain: "your-project-id.firebaseapp.com",
-      projectId: "your-project-id",
-      storageBucket: "your-project-id.appspot.com",
-      messagingSenderId: "12345...",
-      appId: "1:12345..."
-    };
-    ```
-
-2.  **Add Variables to Your Hosting Provider**:
-    *   Go to your project's dashboard on Netlify or Vercel.
-    *   Find the settings for **Environment Variables** (on Netlify, it's under `Site settings > Build & deploy > Environment`).
-    *   In the Netlify dashboard, you will add a new environment variable for each of the following keys. The **Key** is the name on the left, and the **Value** is what you will copy from your Firebase project settings.
-
-| Key (in Netlify) | Value (from your Firebase config) |
-| --- | --- |
-| `NEXT_PUBLIC_FIREBASE_API_KEY` | The `apiKey` value |
-| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | The `authDomain` value |
-| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | The `projectId` value |
-| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | The `storageBucket` value |
-| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`| The `messagingSenderId` value |
-| `NEXT_PUBLIC_FIREBASE_APP_ID` | The `appId` value |
-
-
-3.  **Redeploy**:
-    *   After adding the variables, trigger a new deployment on your hosting provider. Your app should now be able to connect to Firebase successfully.
-
-**(Optional) For Local Development:**
-
-If you were running this project on your own computer (outside of Firebase Studio), you would create a file named `.env.local` in the project's root directory and add the variables there:
-```
-NEXT_PUBLIC_FIREBASE_API_KEY=your_value_here
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_value_here
-...
+```bash
+git clone https://github.com/AryansDevStudios/studio.git
+cd studio
 ```
 
-## What to Deploy
+### 2. Install Dependencies
 
-When you use a modern hosting platform like Firebase, Vercel, or Netlify, you typically **don't upload files or folders manually**. Instead, you connect the hosting service to your Git repository (e.g., on GitHub). The service then automatically runs the build process and deploys your application.
+```bash
+npm install
+```
 
-Your repository should contain all of your project's source code. Essentially, this is every file you see in the project, with the major exception of the `node_modules` folder, which is generated automatically by the hosting provider.
+### 3. Configure Environment Variables
 
-Here are the key files and folders that need to be in your repository for a successful deployment:
+Create a `.env.local` file in the project root:
 
-*   **`src/`**: Contains all your application source code, including pages and components.
-*   **`package.json`**: Lists all your project's dependencies. This is crucial for the hosting provider to install the necessary packages.
-*   **`next.config.ts`**: The configuration file for Next.js.
-*   **`tailwind.config.ts`**: The configuration for your app's styling.
-*   **`tsconfig.json`**: The TypeScript configuration.
-*   **`apphosting.yaml`**: Firebase App Hosting configuration.
-*   **`.firebaserc` & `firebase.json`**: Firebase project configuration (created after running `firebase init`).
-*   **`README.md`**: This file!
+```env
+NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project_id.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+```
 
-You do **not** need to upload:
+### 4. Run Development Server
 
-*   **`node_modules/`**: This folder contains all the installed packages and can be very large. The hosting service will install these for you based on your `package.json`.
-*   **`.next/`**: This is the build output folder. The hosting service will create this for you when it builds your project.
+```bash
+npm run dev
+```
+
+Navigate to [http://localhost:3000](http://localhost:3000) in your browser.
+
+### 5. Production Build
+
+```bash
+npm run build
+npm start
+```
+
+---
+
+## 🤝 Contributing
+
+Contributions, issues, and feature requests are welcome! Feel free to open an issue or submit a pull request.
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
